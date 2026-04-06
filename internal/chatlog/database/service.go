@@ -134,3 +134,19 @@ func (s *Service) Close() {
 		s.webhookCancel = nil
 	}
 }
+
+// GetSNSTimeline 获取朋友圈时间线数据
+func (s *Service) GetSNSTimeline(username string, limit, offset int) ([]map[string]interface{}, error) {
+	if s.db == nil {
+		return nil, nil
+	}
+	return s.db.GetSNSTimeline(username, limit, offset)
+}
+
+// GetSNSCount 获取朋友圈数量统计
+func (s *Service) GetSNSCount(username string) (int, error) {
+	if s.db == nil {
+		return 0, nil
+	}
+	return s.db.GetSNSCount(username)
+}

@@ -129,3 +129,11 @@ func (w *DB) GetMedia(_type string, key string) (*model.Media, error) {
 func (w *DB) SetCallback(group string, callback func(event fsnotify.Event) error) error {
 	return w.ds.SetCallback(group, callback)
 }
+
+func (w *DB) GetSNSTimeline(username string, limit, offset int) ([]map[string]interface{}, error) {
+	return w.ds.GetSNSTimeline(context.Background(), username, limit, offset)
+}
+
+func (w *DB) GetSNSCount(username string) (int, error) {
+	return w.ds.GetSNSCount(context.Background(), username)
+}

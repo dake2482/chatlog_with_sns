@@ -652,3 +652,11 @@ WHERE
 func (ds *DataSource) Close() error {
 	return ds.dbm.Close()
 }
+
+func (ds *DataSource) GetSNSTimeline(ctx context.Context, username string, limit, offset int) ([]map[string]interface{}, error) {
+	return []map[string]interface{}{}, nil
+}
+
+func (ds *DataSource) GetSNSCount(ctx context.Context, username string) (int, error) {
+	return 0, nil
+}

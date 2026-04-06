@@ -14,6 +14,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/sjzar/chatlog/internal/errors"
+	"github.com/sjzar/chatlog/internal/model"
 	"github.com/sjzar/chatlog/pkg/util"
 	"github.com/sjzar/chatlog/pkg/util/dat2img"
 	"github.com/sjzar/chatlog/pkg/util/silk"
@@ -60,6 +61,7 @@ func (s *Service) initAPIRouter() {
 		api.GET("/contact", s.handleContacts)
 		api.GET("/chatroom", s.handleChatRooms)
 		api.GET("/session", s.handleSessions)
+		api.GET("/sns", s.handleSNS)
 	}
 }
 
@@ -290,6 +292,132 @@ func (s *Service) handleSessions(c *gin.Context) {
 			c.Writer.WriteString("\n")
 		}
 		c.Writer.Flush()
+	}
+}
+
+func (s *Service) handleSNS(c *gin.Context) {
+	q := struct {
+		Username string `form:"username"`
+		Limit    int    `form:"limit"`
+		Offset   int    `form:"offset"`
+		Format   string `form:"format"`
+	}{}
+
+	if err := c.BindQuery(&q); err != nil {
+		errors.Err(c, err)
+		return
+	}
+
+	if q.Limit < 0 {
+		q.Limit = 0
+	}
+	if q.Offset < 0 {
+		q.Offset = 0
+	}
+
+	data, err := s.db.GetSNSTimeline(q.Username, q.Limit, q.Offset)
+	if err != nil {
+		errors.Err(c, err)
+		return
+	}
+
+	switch strings.ToLower(q.Format) {
+	case "json":
+		c.JSON(http.StatusOK, data)
+	case "csv":
+		c.Writer.Header().Set("Content-Type", "text/csv; charset=utf-8")
+		c.Writer.Header().Set("Content-Disposition", "attachment; filename=sns_timeline.csv")
+		c.Writer.Header().Set("Cache-Control", "no-cache")
+		c.Writer.Header().Set("Connection", "keep-alive")
+		c.Writer.Flush()
+
+		csvWriter := csv.NewWriter(c.Writer)
+		csvWriter.Write([]string{"TID", "UserName", "NickName", "CreateTime", "ContentType", "ContentDesc", "XMLContent"})
+		for _, item := range data {
+			csvWriter.Write([]string{
+				fmt.Sprintf("%v", item["tid"]),
+				fmt.Sprintf("%v", item["user_name"]),
+				fmt.Sprintf("%v", item["nickname"]),
+				fmt.Sprintf("%v", item["create_time_str"]),
+				fmt.Sprintf("%v", item["content_type"]),
+				fmt.Sprintf("%v", item["content_desc"]),
+				fmt.Sprintf("%v", item["xml_content"]),
+			})
+		}
+		csvWriter.Flush()
+	case "raw":
+		c.Writer.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		c.Writer.Header().Set("Cache-Control", "no-cache")
+		c.Writer.Header().Set("Connection", "keep-alive")
+		c.Writer.Flush()
+
+		for _, item := range data {
+			if xmlContent, ok := item["xml_content"].(string); ok && xmlContent != "" {
+				c.Writer.WriteString(xmlContent)
+				c.Writer.WriteString("\n")
+				c.Writer.WriteString(strings.Repeat("=", 80))
+				c.Writer.WriteString("\n")
+			}
+		}
+	default:
+		c.Writer.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		c.Writer.Header().Set("Cache-Control", "no-cache")
+		c.Writer.Header().Set("Connection", "keep-alive")
+		c.Writer.Flush()
+
+		for _, item := range data {
+			if createTimeStr, ok := item["create_time_str"].(string); ok && createTimeStr != "" {
+				c.Writer.WriteString(fmt.Sprintf("📅 %s\n", createTimeStr))
+			}
+			if nickname, ok := item["nickname"].(string); ok && nickname != "" {
+				c.Writer.WriteString(fmt.Sprintf("👤 %s\n", nickname))
+			}
+			if contentDesc, ok := item["content_desc"].(string); ok && contentDesc != "" {
+				c.Writer.WriteString(fmt.Sprintf("💬 %s\n", contentDesc))
+			}
+			if location, ok := item["location"].(*model.SNSLocation); ok && location != nil {
+				c.Writer.WriteString("📍 ")
+				if location.POIName != "" {
+					c.Writer.WriteString(location.POIName)
+					if location.POIAddress != "" {
+						c.Writer.WriteString(fmt.Sprintf(" (%s)", location.POIAddress))
+					}
+				} else if location.City != "" {
+					c.Writer.WriteString(location.City)
+				}
+				c.Writer.WriteString("\n")
+			}
+			switch item["content_type"] {
+			case "image":
+				if mediaList, ok := item["media_list"].([]model.SNSMedia); ok {
+					c.Writer.WriteString(fmt.Sprintf("🖼️ 图片 (%d张)\n", len(mediaList)))
+				}
+			case "video":
+				if mediaList, ok := item["media_list"].([]model.SNSMedia); ok && len(mediaList) > 0 {
+					if mediaList[0].Duration != "" {
+						c.Writer.WriteString(fmt.Sprintf("🎬 视频 (%s)\n", mediaList[0].Duration))
+					} else {
+						c.Writer.WriteString("🎬 视频\n")
+					}
+				}
+			case "article":
+				if article, ok := item["article"].(*model.SNSArticle); ok && article != nil {
+					c.Writer.WriteString(fmt.Sprintf("📰 文章: %s\n", article.Title))
+					if article.URL != "" {
+						c.Writer.WriteString(fmt.Sprintf("   %s\n", article.URL))
+					}
+				}
+			case "finder":
+				if feed, ok := item["finder_feed"].(*model.SNSFinderFeed); ok && feed != nil {
+					c.Writer.WriteString(fmt.Sprintf("📺 视频号: %s\n", feed.Nickname))
+					if feed.Desc != "" {
+						c.Writer.WriteString(fmt.Sprintf("   %s\n", feed.Desc))
+					}
+				}
+			}
+			c.Writer.WriteString(strings.Repeat("=", 80))
+			c.Writer.WriteString("\n\n")
+		}
 	}
 }
 

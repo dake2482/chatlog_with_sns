@@ -345,6 +345,7 @@
             <div class="tab active" data-tab="session">最近会话</div>
             <div class="tab" data-tab="chatroom">群聊</div>
             <div class="tab" data-tab="contact">联系人</div>
+            <div class="tab" data-tab="sns">朋友圈</div>
             <div class="tab" data-tab="chatlog">聊天记录</div>
           </div>
 
@@ -425,6 +426,49 @@
                 <option value="">默认</option>
                 <option value="json">JSON</option>
                 <option value="text">纯文本</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- 朋友圈查询表单 -->
+          <div class="tab-content" id="sns-tab">
+            <div class="api-description">
+              <p>
+                查询朋友圈时间线数据。<span class="badge">GET /api/v1/sns</span>
+              </p>
+            </div>
+            <div class="form-group">
+              <label for="sns-username"
+                >用户名：<span class="optional-param">可选</span></label
+              >
+              <input
+                type="text"
+                id="sns-username"
+                placeholder="输入 wxid 或微信号筛选"
+              />
+            </div>
+            <div class="form-group">
+              <label for="sns-limit"
+                >返回数量：<span class="optional-param">可选</span></label
+              >
+              <input type="number" id="sns-limit" placeholder="默认不做限制" />
+            </div>
+            <div class="form-group">
+              <label for="sns-offset"
+                >偏移量：<span class="optional-param">可选</span></label
+              >
+              <input type="number" id="sns-offset" placeholder="默认 0" />
+            </div>
+            <div class="form-group">
+              <label for="sns-format"
+                >输出格式：<span class="optional-param">可选</span></label
+              >
+              <select id="sns-format">
+                <option value="">默认</option>
+                <option value="text">纯文本</option>
+                <option value="json">JSON</option>
+                <option value="csv">CSV</option>
+                <option value="raw">原始 XML</option>
               </select>
             </div>
           </div>
@@ -674,6 +718,20 @@
                   document.getElementById("session-format").value;
 
                 if (sessionFormat) params.append("format", sessionFormat);
+                break;
+
+              case "sns":
+                url += "sns";
+                const snsUsername =
+                  document.getElementById("sns-username").value;
+                const snsLimit = document.getElementById("sns-limit").value;
+                const snsOffset = document.getElementById("sns-offset").value;
+                const snsFormat = document.getElementById("sns-format").value;
+
+                if (snsUsername) params.append("username", snsUsername);
+                if (snsLimit) params.append("limit", snsLimit);
+                if (snsOffset) params.append("offset", snsOffset);
+                if (snsFormat) params.append("format", snsFormat);
                 break;
             }
 

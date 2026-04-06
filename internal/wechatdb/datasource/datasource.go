@@ -30,6 +30,10 @@ type DataSource interface {
 	// 媒体
 	GetMedia(ctx context.Context, _type string, key string) (*model.Media, error)
 
+	// 朋友圈
+	GetSNSTimeline(ctx context.Context, username string, limit, offset int) ([]map[string]interface{}, error)
+	GetSNSCount(ctx context.Context, username string) (int, error)
+
 	// 设置回调函数
 	SetCallback(group string, callback func(event fsnotify.Event) error) error
 
