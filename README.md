@@ -17,7 +17,7 @@ _聊天记录工具，帮助大家轻松使用自己的聊天数据_，将chatlo
 
 - 从本地数据库文件中获取聊天数据
 - 支持 Windows / macOS 系统，兼容微信 3.x / 4.x 版本
-- 支持 macOS 微信 4.x 的 `sns.db` 解密与加载，可查询朋友圈时间线数据
+- 支持 macOS 微信 4.x 的 `sns.db` 自动解密与加载，可直接查询朋友圈时间线数据
 - 支持获取数据与图片密钥 (Windows < 4.0.3.36 / macOS < 4.0.3.80)
 - 支持图片、语音等多媒体数据解密，支持 wxgf 格式解析
 - 支持自动解密数据库，并提供新消息 Webhook 回调
@@ -28,12 +28,12 @@ _聊天记录工具，帮助大家轻松使用自己的聊天数据_，将chatlo
 
 ## Fork 说明
 
-本仓库基于 `myysophia/wechat-log` 继续演进，补充了 macOS 场景下的朋友圈能力，当前重点包括：
+本仓库基于 `myysophia/wechat-log` 继续演进，重点补充了 macOS 场景下的朋友圈能力，当前包括：
 
 - 自动识别并加载 `sns.db`
 - 新增 `GET /api/v1/sns` 接口
-- 支持按 `username` 查询朋友圈时间线
-- 支持 `text`、`json`、`csv`、`raw xml` 多种输出格式
+- 支持按发布者标识查询朋友圈时间线
+- 支持纯文本、`json`、`csv`、原始 XML 多种输出格式
 - 支持昵称回退匹配，便于直接按联系人昵称检索
 
 ## Quick Start
@@ -260,10 +260,10 @@ GET /api/v1/chatlog?time=2023-01-01&talker=wxid_xxx
 `GET /api/v1/sns`
 
 参数说明：
-- `username`: 朋友圈发布者标识，支持 `wxid`、微信号，查询不到时会回退匹配昵称
+- `username`: 朋友圈发布者标识，支持 `wxid`、微信号，查不到时会回退匹配昵称
 - `limit`: 返回数量
 - `offset`: 分页偏移量
-- `format`: 输出格式，支持 `text`、`json`、`csv`、`raw`
+- `format`: 输出格式，支持纯文本、`json`、`csv`、`raw`
 
 ### 多媒体内容
 
