@@ -18,6 +18,7 @@ _聊天记录工具，帮助大家轻松使用自己的聊天数据_，将chatlo
 - 从本地数据库文件中获取聊天数据
 - 支持 Windows / macOS 系统，兼容微信 3.x / 4.x 版本
 - 支持 macOS 微信 4.x 的 `sns.db` 自动解密与加载，可直接查询朋友圈时间线数据
+- 支持 macOS 微信 4.x 的 `favorite.db` 自动解密与加载，可直接查询微信收藏
 - 支持获取数据与图片密钥 (Windows < 4.0.3.36 / macOS < 4.0.3.80)
 - 支持图片、语音等多媒体数据解密，支持 wxgf 格式解析
 - 支持自动解密数据库，并提供新消息 Webhook 回调
@@ -31,7 +32,9 @@ _聊天记录工具，帮助大家轻松使用自己的聊天数据_，将chatlo
 本仓库基于 `myysophia/wechat-log` 继续演进，重点补充了 macOS 场景下的朋友圈能力，当前包括：
 
 - 自动识别并加载 `sns.db`
+- 自动识别并加载 `favorite.db`
 - 新增 `GET /api/v1/sns` 接口
+- 新增 `GET /api/v1/favorites` 接口
 - 支持按发布者标识查询朋友圈时间线
 - 支持纯文本、`json`、`csv`、原始 XML 多种输出格式
 - 支持昵称回退匹配，便于直接按联系人昵称检索
@@ -65,7 +68,7 @@ go install github.com/jythoner2023/chatlog_with_sns@latest
 ```
 
 > 💡 **提示**: 部分功能有 cgo 依赖，编译前需确认本地有 C 编译环境。
-> ⚠️ **注意**: go-sqlite3 必须在 `CGO_ENABLED=1` 时编译才能正常工作。请安装对应平台的 C 编译器（Windows 建议安装 MinGW-w64 并设置 `CC`；macOS 需安装 Xcode Command Line Tools；Linux 需安装 gcc/clang），然后执行 `CGO_ENABLED=1 go build ./cmd/chatlog` 或按需配置环境。
+> ⚠️ **注意**: go-sqlite3 必须在 `CGO_ENABLED=1` 时编译才能正常工作。请安装对应平台的 C 编译器（Windows 建议安装 MinGW-w64 并设置 `CC`；macOS 需安装 Xcode Command Line Tools；Linux 需安装 gcc/clang），然后执行 `CGO_ENABLED=1 go build -o chatlog .` 或按需配置环境。
 
 ### 下载预编译版本
 
@@ -254,6 +257,7 @@ GET /api/v1/chatlog?time=2023-01-01&talker=wxid_xxx
 - **群聊列表**：`GET /api/v1/chatroom`
 - **会话列表**：`GET /api/v1/session`
 - **朋友圈时间线**：`GET /api/v1/sns?username=HEXIN&format=text`
+- **微信收藏**：`GET /api/v1/favorites?type=article&format=text`
 
 ### 朋友圈接口说明
 
@@ -261,6 +265,17 @@ GET /api/v1/chatlog?time=2023-01-01&talker=wxid_xxx
 
 参数说明：
 - `username`: 朋友圈发布者标识，支持 `wxid`、微信号，查不到时会回退匹配昵称
+- `limit`: 返回数量
+- `offset`: 分页偏移量
+- `format`: 输出格式，支持纯文本、`json`、`csv`、`raw`
+
+### 收藏接口说明
+
+`GET /api/v1/favorites`
+
+参数说明：
+- `type`: 收藏类型过滤，支持 `text`、`image`、`video`、`article`、`location`、`file`、`chat`、`note`、`card`、`finder`
+- `keyword`: 关键词搜索，当前在收藏 XML 内容上做匹配
 - `limit`: 返回数量
 - `offset`: 分页偏移量
 - `format`: 输出格式，支持纯文本、`json`、`csv`、`raw`

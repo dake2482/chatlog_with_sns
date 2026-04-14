@@ -150,3 +150,10 @@ func (s *Service) GetSNSCount(username string) (int, error) {
 	}
 	return s.db.GetSNSCount(username)
 }
+
+func (s *Service) GetFavorites(favType string, keyword string, limit, offset int) ([]*model.FavoriteItem, error) {
+	if s.db == nil {
+		return nil, nil
+	}
+	return s.db.GetFavorites(favType, keyword, limit, offset)
+}

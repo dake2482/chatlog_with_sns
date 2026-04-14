@@ -137,3 +137,7 @@ func (w *DB) GetSNSTimeline(username string, limit, offset int) ([]map[string]in
 func (w *DB) GetSNSCount(username string) (int, error) {
 	return w.ds.GetSNSCount(context.Background(), username)
 }
+
+func (w *DB) GetFavorites(favType string, keyword string, limit, offset int) ([]*model.FavoriteItem, error) {
+	return w.repo.GetFavorites(context.Background(), favType, keyword, limit, offset)
+}

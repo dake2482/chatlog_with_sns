@@ -22,12 +22,13 @@ import (
 )
 
 const (
-	Message = "message"
-	Contact = "contact"
-	Session = "session"
-	Media   = "media"
-	Voice   = "voice"
-	SNS     = "sns"
+	Message  = "message"
+	Contact  = "contact"
+	Session  = "session"
+	Media    = "media"
+	Voice    = "voice"
+	SNS      = "sns"
+	Favorite = "favorite"
 )
 
 var Groups = []*dbm.Group{
@@ -59,6 +60,11 @@ var Groups = []*dbm.Group{
 	{
 		Name:      SNS,
 		Pattern:   `^sns\.db$`,
+		BlackList: []string{},
+	},
+	{
+		Name:      Favorite,
+		Pattern:   `^favorite\.db$`,
 		BlackList: []string{},
 	},
 }
@@ -907,4 +913,70 @@ func (ds *DataSource) GetSNSCount(ctx context.Context, username string) (int, er
 	}
 
 	return count, nil
+}
+
+func (ds *DataSource) GetFavorites(ctx context.Context, favType string, keyword string, limit, offset int) ([]*model.FavoriteItem, error) {
+	db, err := ds.dbm.GetDB(Favorite)
+	if err != nil {
+		return nil, err
+	}
+
+	query := `SELECT local_id, type, update_time, content, fromusr, realchatname FROM fav_db_item`
+	whereParts := make([]string, 0)
+	args := make([]interface{}, 0)
+
+	if favType != "" {
+		typeCode, ok := model.FavoriteTypeCode(favType)
+		if !ok {
+			return nil, errors.InvalidArg("type")
+		}
+		whereParts = append(whereParts, "type = ?")
+		args = append(args, typeCode)
+	}
+	if keyword != "" {
+		whereParts = append(whereParts, "content LIKE ?")
+		args = append(args, "%"+keyword+"%")
+	}
+	if len(whereParts) > 0 {
+		query += " WHERE " + strings.Join(whereParts, " AND ")
+	}
+
+	query += " ORDER BY update_time DESC"
+	if limit > 0 {
+		query += fmt.Sprintf(" LIMIT %d", limit)
+		if offset > 0 {
+			query += fmt.Sprintf(" OFFSET %d", offset)
+		}
+	}
+
+	rows, err := db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, errors.QueryFailed(query, err)
+	}
+	defer rows.Close()
+
+	items := make([]*model.FavoriteItem, 0)
+	for rows.Next() {
+		var (
+			localID    int64
+			typeCode   int
+			updateTime int64
+			content    string
+			fromUser   sql.NullString
+			sourceChat sql.NullString
+		)
+
+		if err := rows.Scan(&localID, &typeCode, &updateTime, &content, &fromUser, &sourceChat); err != nil {
+			return nil, errors.ScanRowFailed(err)
+		}
+
+		parsed, parseErr := model.ParseFavoriteContent(content, typeCode)
+		item := model.BuildFavoriteItem(localID, typeCode, updateTime, content, nullStringValue(fromUser), nullStringValue(sourceChat), parsed)
+		if parseErr != nil && item.Summary == "" {
+			item.Summary = model.FavoriteTypeName(typeCode)
+		}
+		items = append(items, item)
+	}
+
+	return items, nil
 }

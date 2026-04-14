@@ -34,6 +34,9 @@ type DataSource interface {
 	GetSNSTimeline(ctx context.Context, username string, limit, offset int) ([]map[string]interface{}, error)
 	GetSNSCount(ctx context.Context, username string) (int, error)
 
+	// 收藏
+	GetFavorites(ctx context.Context, favType string, keyword string, limit, offset int) ([]*model.FavoriteItem, error)
+
 	// 设置回调函数
 	SetCallback(group string, callback func(event fsnotify.Event) error) error
 

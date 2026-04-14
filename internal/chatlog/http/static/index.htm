@@ -345,6 +345,7 @@
             <div class="tab active" data-tab="session">最近会话</div>
             <div class="tab" data-tab="chatroom">群聊</div>
             <div class="tab" data-tab="contact">联系人</div>
+            <div class="tab" data-tab="favorites">收藏</div>
             <div class="tab" data-tab="sns">朋友圈</div>
             <div class="tab" data-tab="chatlog">聊天记录</div>
           </div>
@@ -426,6 +427,67 @@
                 <option value="">默认</option>
                 <option value="json">JSON</option>
                 <option value="text">纯文本</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- 收藏查询表单 -->
+          <div class="tab-content" id="favorites-tab">
+            <div class="api-description">
+              <p>
+                查询微信收藏数据。<span class="badge">GET /api/v1/favorites</span>
+              </p>
+            </div>
+            <div class="form-group">
+              <label for="favorites-type"
+                >收藏类型：<span class="optional-param">可选</span></label
+              >
+              <select id="favorites-type">
+                <option value="">默认</option>
+                <option value="text">文本</option>
+                <option value="image">图片</option>
+                <option value="video">视频</option>
+                <option value="article">文章</option>
+                <option value="location">位置</option>
+                <option value="file">文件</option>
+                <option value="chat">聊天记录</option>
+                <option value="note">笔记</option>
+                <option value="card">名片</option>
+                <option value="finder">视频号</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="favorites-keyword"
+                >关键词：<span class="optional-param">可选</span></label
+              >
+              <input
+                type="text"
+                id="favorites-keyword"
+                placeholder="搜索收藏 XML 内容中的关键词"
+              />
+            </div>
+            <div class="form-group">
+              <label for="favorites-limit"
+                >返回数量：<span class="optional-param">可选</span></label
+              >
+              <input type="number" id="favorites-limit" placeholder="默认不做限制" />
+            </div>
+            <div class="form-group">
+              <label for="favorites-offset"
+                >偏移量：<span class="optional-param">可选</span></label
+              >
+              <input type="number" id="favorites-offset" placeholder="默认 0" />
+            </div>
+            <div class="form-group">
+              <label for="favorites-format"
+                >输出格式：<span class="optional-param">可选</span></label
+              >
+              <select id="favorites-format">
+                <option value="">默认</option>
+                <option value="text">纯文本</option>
+                <option value="json">JSON</option>
+                <option value="csv">CSV</option>
+                <option value="raw">原始 XML</option>
               </select>
             </div>
           </div>
@@ -732,6 +794,26 @@
                 if (snsLimit) params.append("limit", snsLimit);
                 if (snsOffset) params.append("offset", snsOffset);
                 if (snsFormat) params.append("format", snsFormat);
+                break;
+
+              case "favorites":
+                url += "favorites";
+                const favoritesType =
+                  document.getElementById("favorites-type").value;
+                const favoritesKeyword =
+                  document.getElementById("favorites-keyword").value;
+                const favoritesLimit =
+                  document.getElementById("favorites-limit").value;
+                const favoritesOffset =
+                  document.getElementById("favorites-offset").value;
+                const favoritesFormat =
+                  document.getElementById("favorites-format").value;
+
+                if (favoritesType) params.append("type", favoritesType);
+                if (favoritesKeyword) params.append("keyword", favoritesKeyword);
+                if (favoritesLimit) params.append("limit", favoritesLimit);
+                if (favoritesOffset) params.append("offset", favoritesOffset);
+                if (favoritesFormat) params.append("format", favoritesFormat);
                 break;
             }
 

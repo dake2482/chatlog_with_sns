@@ -5,6 +5,7 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
+	"net/http"
 	"regexp"
 	"sort"
 	"strings"
@@ -659,4 +660,8 @@ func (ds *DataSource) GetSNSTimeline(ctx context.Context, username string, limit
 
 func (ds *DataSource) GetSNSCount(ctx context.Context, username string) (int, error) {
 	return 0, nil
+}
+
+func (ds *DataSource) GetFavorites(ctx context.Context, favType string, keyword string, limit, offset int) ([]*model.FavoriteItem, error) {
+	return nil, errors.New(nil, http.StatusNotImplemented, "favorites not supported on darwin v3").WithStack()
 }

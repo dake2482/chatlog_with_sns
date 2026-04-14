@@ -61,6 +61,7 @@ func (s *Service) initAPIRouter() {
 		api.GET("/contact", s.handleContacts)
 		api.GET("/chatroom", s.handleChatRooms)
 		api.GET("/session", s.handleSessions)
+		api.GET("/favorites", s.handleFavorites)
 		api.GET("/sns", s.handleSNS)
 	}
 }
@@ -415,6 +416,92 @@ func (s *Service) handleSNS(c *gin.Context) {
 					}
 				}
 			}
+			c.Writer.WriteString(strings.Repeat("=", 80))
+			c.Writer.WriteString("\n\n")
+		}
+	}
+}
+
+func (s *Service) handleFavorites(c *gin.Context) {
+	q := struct {
+		Type    string `form:"type"`
+		Keyword string `form:"keyword"`
+		Limit   int    `form:"limit"`
+		Offset  int    `form:"offset"`
+		Format  string `form:"format"`
+	}{}
+
+	if err := c.BindQuery(&q); err != nil {
+		errors.Err(c, err)
+		return
+	}
+
+	if q.Limit < 0 {
+		q.Limit = 0
+	}
+	if q.Offset < 0 {
+		q.Offset = 0
+	}
+
+	items, err := s.db.GetFavorites(q.Type, q.Keyword, q.Limit, q.Offset)
+	if err != nil {
+		errors.Err(c, err)
+		return
+	}
+
+	switch strings.ToLower(q.Format) {
+	case "json":
+		c.JSON(http.StatusOK, items)
+	case "csv":
+		c.Writer.Header().Set("Content-Type", "text/csv; charset=utf-8")
+		c.Writer.Header().Set("Content-Disposition", "attachment; filename=favorites.csv")
+		c.Writer.Header().Set("Cache-Control", "no-cache")
+		c.Writer.Header().Set("Connection", "keep-alive")
+		c.Writer.Flush()
+
+		csvWriter := csv.NewWriter(c.Writer)
+		csvWriter.Write([]string{"ID", "TypeCode", "Type", "UpdateTime", "Summary", "Title", "Description", "Link", "FromUser", "From", "SourceChat", "SourceChatName"})
+		for _, item := range items {
+			csvWriter.Write([]string{
+				fmt.Sprintf("%d", item.ID),
+				fmt.Sprintf("%d", item.TypeCode),
+				item.Type,
+				item.UpdateTimeStr,
+				item.Summary,
+				item.Title,
+				item.Description,
+				item.Link,
+				item.FromUser,
+				item.FromName(),
+				item.SourceChat,
+				item.SourceChatName(),
+			})
+		}
+		csvWriter.Flush()
+	case "raw":
+		c.Writer.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		c.Writer.Header().Set("Cache-Control", "no-cache")
+		c.Writer.Header().Set("Connection", "keep-alive")
+		c.Writer.Flush()
+
+		for _, item := range items {
+			if item.XMLContent == "" {
+				continue
+			}
+			c.Writer.WriteString(item.XMLContent)
+			c.Writer.WriteString("\n")
+			c.Writer.WriteString(strings.Repeat("=", 80))
+			c.Writer.WriteString("\n")
+		}
+	default:
+		c.Writer.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		c.Writer.Header().Set("Cache-Control", "no-cache")
+		c.Writer.Header().Set("Connection", "keep-alive")
+		c.Writer.Flush()
+
+		for _, item := range items {
+			c.Writer.WriteString(item.PlainText())
+			c.Writer.WriteString("\n")
 			c.Writer.WriteString(strings.Repeat("=", 80))
 			c.Writer.WriteString("\n\n")
 		}
